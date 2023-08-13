@@ -11,7 +11,8 @@
 CREATE TABLE users (
 	id serial PRIMARY KEY,
 	phone_number VARCHAR ( 20 ) UNIQUE NOT NULL,
+  full_name VARCHAR ( 60 ) NOT NULL,
+  password TEXT
 );
 
-INSERT INTO test (name) VALUES ('test1');
-INSERT INTO test (name) VALUES ('test2');
+INSERT INTO users (phone_number, full_name, password) VALUES ('+6218426881', 'Erma', 'hashed_and_salted_password');
