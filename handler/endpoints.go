@@ -32,6 +32,22 @@ func (s *Server) AddUser(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, resp)
 	}
 
+	userInput.Password, err = s.Repository.GenerateHashedAndSaltedPassword(userInput.Password)
+	if err != nil {
+		resp.Error = &generated.ErrorResponse{
+			Message: err.Error(),
+		}
+		return ctx.JSON(http.StatusInternalServerError, resp)
+	}
+
+	err = s.Repository.InsertNewUser(ctx.Request().Context(), userInput)
+	if err != nil {
+		resp.Error = &generated.ErrorResponse{
+			Message: err.Error(),
+		}
+		return ctx.JSON(http.StatusInternalServerError, resp)
+	}
+
 	resp = generated.AddUserResponse{
 		Success: true,
 	}

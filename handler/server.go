@@ -16,6 +16,7 @@ type NewServerOptions struct {
 
 func NewServer(opts NewServerOptions) *Server {
 	return &Server{
-		validate: initValidator(),
+		Repository: opts.Repository,
+		validate:   initValidator(),
 	}
 }

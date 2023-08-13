@@ -6,6 +6,10 @@ package repository
 
 import "context"
 
+//go:generate mockgen -package=repository -source=interfaces.go -destination=interfaces.mock.gen.go
 type RepositoryInterface interface {
+	GenerateHashedAndSaltedPassword(password string) (string, error)
+
+	InsertNewUser(ctx context.Context, input User) error
 	GetTestById(ctx context.Context, input GetTestByIdInput) (output GetTestByIdOutput, err error)
 }

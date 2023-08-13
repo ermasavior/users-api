@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -40,11 +41,18 @@ func TestAddUser(t *testing.T) {
 	mockRepo := repository.NewMockRepositoryInterface(ctrl)
 
 	emptyReq := "This field is required"
+	hashedPassword := "hashed_password"
 
 	validReq := generated.AddUserRequest{
 		FullName:    "full name",
-		Password:    "Pa$$w0rd",
 		PhoneNumber: "+62818426881",
+		Password:    "Pa$$w0rd",
+	}
+
+	userInput := repository.User{
+		FullName:    "full name",
+		PhoneNumber: "+62818426881",
+		Password:    hashedPassword,
 	}
 
 	type args struct {
@@ -66,8 +74,6 @@ func TestAddUser(t *testing.T) {
 					PhoneNumber: "",
 				},
 			},
-			mockFunc: func() {
-			},
 			wantStatusCode: http.StatusBadRequest,
 			wantRes: generated.AddUserResponse{
 				Success: false,
@@ -84,10 +90,50 @@ func TestAddUser(t *testing.T) {
 				req: validReq,
 			},
 			mockFunc: func() {
+				mockRepo.EXPECT().GenerateHashedAndSaltedPassword(validReq.Password).
+					Return(hashedPassword, nil).Times(1)
+				mockRepo.EXPECT().InsertNewUser(gomock.Any(), userInput).
+					Return(nil)
 			},
 			wantStatusCode: http.StatusOK,
 			wantRes: generated.AddUserResponse{
 				Success: true,
+			},
+		},
+		{
+			name: "failed - error generating password",
+			args: args{
+				req: validReq,
+			},
+			mockFunc: func() {
+				mockRepo.EXPECT().GenerateHashedAndSaltedPassword(validReq.Password).
+					Return(hashedPassword, errors.New("error password")).Times(1)
+			},
+			wantStatusCode: http.StatusInternalServerError,
+			wantRes: generated.AddUserResponse{
+				Success: false,
+				Error: &generated.ErrorResponse{
+					Message: "error password",
+				},
+			},
+		},
+		{
+			name: "failed - error inserting new user",
+			args: args{
+				req: validReq,
+			},
+			mockFunc: func() {
+				mockRepo.EXPECT().GenerateHashedAndSaltedPassword(validReq.Password).
+					Return(hashedPassword, nil).Times(1)
+				mockRepo.EXPECT().InsertNewUser(gomock.Any(), userInput).
+					Return(errors.New("error db"))
+			},
+			wantStatusCode: http.StatusInternalServerError,
+			wantRes: generated.AddUserResponse{
+				Success: false,
+				Error: &generated.ErrorResponse{
+					Message: "error db",
+				},
 			},
 		},
 	}
