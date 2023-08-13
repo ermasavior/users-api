@@ -127,7 +127,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/User"
+              $ref: "#/components/schemas/UserLoginRequest"
       responses:
         "200":
           description: User login response
@@ -228,6 +228,16 @@ components:
         user_id:
           type: integer
         auth_token:
+          type: string
+    UserLoginRequest:
+      type: object
+      required:
+        - phone_number
+        - password
+      properties:
+        phone_number:
+          type: string
+        password:
           type: string
     User:
       type: object

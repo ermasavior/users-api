@@ -55,13 +55,39 @@ func (s *Server) AddUser(ctx echo.Context) error {
 }
 
 func (s *Server) LoginUser(ctx echo.Context) error {
-	token := "token-dummy"
-	userID := 1
+	var (
+		resp    generated.UserLoginResponse
+		userReq generated.LoginUserJSONRequestBody
+	)
 
-	var resp = generated.UserLoginResponse{
-		AuthToken: &token,
-		UserId:    &userID,
+	reqBody, _ := io.ReadAll(ctx.Request().Body)
+	_ = sonic.Unmarshal(reqBody, &userReq)
+
+	user, err := s.Repository.GetUserByPhoneNumber(ctx.Request().Context(), userReq.PhoneNumber)
+	if err != nil {
+		resp.Error = &generated.ErrorResponse{
+			Message: err.Error(),
+		}
+		return ctx.JSON(http.StatusInternalServerError, resp)
 	}
+
+	isValid, err := s.Repository.ComparePasswords(user.Password, userReq.Password)
+	if err != nil {
+		resp.Error = &generated.ErrorResponse{
+			Message: err.Error(),
+		}
+		return ctx.JSON(http.StatusInternalServerError, resp)
+	}
+
+	if !isValid {
+		resp.Error = &generated.ErrorResponse{
+			Message: "Phone number and password does not match",
+		}
+		return ctx.JSON(http.StatusBadRequest, resp)
+	}
+
+	resp.UserId = &user.ID
+
 	return ctx.JSON(http.StatusOK, resp)
 }
 

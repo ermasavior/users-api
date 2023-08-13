@@ -9,4 +9,10 @@ const (
 			$1, $2, $3
 		)
 	`
+	queryGetUserByPhoneNumber = `
+		SELECT
+			id, password
+		FROM users
+		WHERE phone_number = $1
+	`
 )

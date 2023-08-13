@@ -34,6 +34,21 @@ func (m *MockRepositoryInterface) EXPECT() *MockRepositoryInterfaceMockRecorder 
 	return m.recorder
 }
 
+// ComparePasswords mocks base method.
+func (m *MockRepositoryInterface) ComparePasswords(hashedPwd, plainPwd string) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ComparePasswords", hashedPwd, plainPwd)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ComparePasswords indicates an expected call of ComparePasswords.
+func (mr *MockRepositoryInterfaceMockRecorder) ComparePasswords(hashedPwd, plainPwd interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ComparePasswords", reflect.TypeOf((*MockRepositoryInterface)(nil).ComparePasswords), hashedPwd, plainPwd)
+}
+
 // GenerateHashedAndSaltedPassword mocks base method.
 func (m *MockRepositoryInterface) GenerateHashedAndSaltedPassword(password string) (string, error) {
 	m.ctrl.T.Helper()
@@ -49,19 +64,19 @@ func (mr *MockRepositoryInterfaceMockRecorder) GenerateHashedAndSaltedPassword(p
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateHashedAndSaltedPassword", reflect.TypeOf((*MockRepositoryInterface)(nil).GenerateHashedAndSaltedPassword), password)
 }
 
-// GetTestById mocks base method.
-func (m *MockRepositoryInterface) GetTestById(ctx context.Context, input GetTestByIdInput) (GetTestByIdOutput, error) {
+// GetUserByPhoneNumber mocks base method.
+func (m *MockRepositoryInterface) GetUserByPhoneNumber(ctx context.Context, phoneNumber string) (User, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTestById", ctx, input)
-	ret0, _ := ret[0].(GetTestByIdOutput)
+	ret := m.ctrl.Call(m, "GetUserByPhoneNumber", ctx, phoneNumber)
+	ret0, _ := ret[0].(User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetTestById indicates an expected call of GetTestById.
-func (mr *MockRepositoryInterfaceMockRecorder) GetTestById(ctx, input interface{}) *gomock.Call {
+// GetUserByPhoneNumber indicates an expected call of GetUserByPhoneNumber.
+func (mr *MockRepositoryInterfaceMockRecorder) GetUserByPhoneNumber(ctx, phoneNumber interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTestById", reflect.TypeOf((*MockRepositoryInterface)(nil).GetTestById), ctx, input)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByPhoneNumber", reflect.TypeOf((*MockRepositoryInterface)(nil).GetUserByPhoneNumber), ctx, phoneNumber)
 }
 
 // InsertNewUser mocks base method.
