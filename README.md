@@ -1,4 +1,13 @@
-# Backend Engineering Interview Assignment (Golang)
+# Users-API Assignment
+
+Simple Users API to register, login, get, and update user data.
+
+## Feature CheckLists
+
+- [x] Register User
+- [x] Login User
+- [ ] Get User
+- [ ] Update User
 
 ## Requirements
 
@@ -10,16 +19,19 @@ To run this project you need to have the following installed:
 4. [GNU Make](https://www.gnu.org/software/make/)
 5. [oapi-codegen](https://github.com/deepmap/oapi-codegen)
 
-    Install the latest version with:
-    ```
-    go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@latest
-    ```
+   Install the latest version with:
+
+   ```
+   go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@latest
+   ```
+
 6. [mock](https://github.com/golang/mock)
 
-    Install the latest version with:
-    ```
-    go install github.com/golang/mock/mockgen@latest
-    ```
+   Install the latest version with:
+
+   ```
+   go install github.com/golang/mock/mockgen@latest
+   ```
 
 ## Initiate The Project
 
