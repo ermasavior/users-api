@@ -1,14 +1,38 @@
 package handler
 
 import (
+	"io"
 	"net/http"
 
 	"github.com/SawitProRecruitment/UserService/generated"
+	"github.com/SawitProRecruitment/UserService/repository"
+	"github.com/bytedance/sonic"
 	"github.com/labstack/echo/v4"
 )
 
 func (s *Server) AddUser(ctx echo.Context) error {
-	var resp = generated.AddUserResponse{
+	var (
+		resp    generated.AddUserResponse
+		userReq generated.AddUserJSONRequestBody
+	)
+
+	reqBody, _ := io.ReadAll(ctx.Request().Body)
+	_ = sonic.Unmarshal(reqBody, &userReq)
+
+	userInput := repository.User{
+		FullName:    userReq.FullName,
+		Password:    userReq.Password,
+		PhoneNumber: userReq.PhoneNumber,
+	}
+
+	err := s.validate.Struct(userInput)
+	if err != nil {
+		validateRes := translateError(err)
+		resp.Validation = validateRes.ToHTTPResponse()
+		return ctx.JSON(http.StatusBadRequest, resp)
+	}
+
+	resp = generated.AddUserResponse{
 		Success: true,
 	}
 	return ctx.JSON(http.StatusOK, resp)

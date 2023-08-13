@@ -8,7 +8,9 @@ import (
 	"testing"
 
 	"github.com/SawitProRecruitment/UserService/generated"
+	"github.com/SawitProRecruitment/UserService/repository"
 	"github.com/bytedance/sonic"
+	"github.com/golang/mock/gomock"
 	"github.com/labstack/echo/v4"
 )
 
@@ -33,29 +35,55 @@ func buildHTTPRequestBody(c echo.Context, method, path string, bodyRequest inter
 
 func TestAddUser(t *testing.T) {
 	method, path := http.MethodPost, "/users"
-	rec, c := initHTTPCall(method, path)
+
+	ctrl := gomock.NewController(t)
+	mockRepo := repository.NewMockRepositoryInterface(ctrl)
+
+	emptyReq := "This field is required"
+
+	validReq := generated.AddUserRequest{
+		FullName:    "full name",
+		Password:    "Pa$$w0rd",
+		PhoneNumber: "+62818426881",
+	}
 
 	type args struct {
-		ctx echo.Context
 		req generated.AddUserRequest
 	}
 	tests := []struct {
 		name           string
 		args           args
+		mockFunc       func()
 		wantStatusCode int
 		wantRes        generated.AddUserResponse
 	}{
 		{
-			name: "success",
+			name: "bad request - invalid params",
 			args: args{
 				req: generated.AddUserRequest{
-					FullName:    "full name",
-					Password:    "password",
-					PhoneNumber: "+621343",
+					FullName:    "",
+					Password:    "",
+					PhoneNumber: "",
 				},
-				ctx: func() echo.Context {
-					return c
-				}(),
+			},
+			mockFunc: func() {
+			},
+			wantStatusCode: http.StatusBadRequest,
+			wantRes: generated.AddUserResponse{
+				Success: false,
+				Validation: &generated.ValidationResult{
+					PhoneNumber: &emptyReq,
+					FullName:    &emptyReq,
+					Password:    &emptyReq,
+				},
+			},
+		},
+		{
+			name: "success - valid params",
+			args: args{
+				req: validReq,
+			},
+			mockFunc: func() {
 			},
 			wantStatusCode: http.StatusOK,
 			wantRes: generated.AddUserResponse{
@@ -66,8 +94,15 @@ func TestAddUser(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := Server{}
+			s := Server{
+				Repository: mockRepo,
+				validate:   initValidator(),
+			}
+			if tt.mockFunc != nil {
+				tt.mockFunc()
+			}
 
+			rec, c := initHTTPCall(method, path)
 			c = buildHTTPRequestBody(c, method, path, tt.args.req)
 			s.AddUser(c)
 
@@ -87,7 +122,6 @@ func TestAddUser(t *testing.T) {
 
 func TestUpdateUser(t *testing.T) {
 	method, path := http.MethodPatch, "/users"
-	rec, c := initHTTPCall(method, path)
 
 	type args struct {
 		req generated.UpdateUserRequest
@@ -114,6 +148,7 @@ func TestUpdateUser(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			s := Server{}
 
+			rec, c := initHTTPCall(method, path)
 			c = buildHTTPRequestBody(c, method, path, tt.args.req)
 			s.UpdateUser(c)
 
@@ -133,7 +168,6 @@ func TestUpdateUser(t *testing.T) {
 
 func TestLoginUser(t *testing.T) {
 	method, path := http.MethodPost, "/users/login"
-	rec, c := initHTTPCall(method, path)
 
 	var (
 		token  = "token-dummy"
@@ -163,6 +197,7 @@ func TestLoginUser(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			s := Server{}
 
+			rec, c := initHTTPCall(method, path)
 			s.LoginUser(c)
 
 			var got generated.UserLoginResponse

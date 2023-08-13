@@ -177,14 +177,16 @@ components:
         error:
           $ref: "#/components/schemas/ErrorResponse"
         validation:
-          type: object
-          properties:
-            full_name:
-              type: string
-            phone_number:
-              type: string
-            password:
-              type: string
+          $ref: "#/components/schemas/ValidationResult"
+    ValidationResult:
+      type: object
+      properties:
+        full_name:
+          type: string
+        phone_number:
+          type: string
+        password:
+          type: string
     GetUserResponse:
       type: object
       required:
