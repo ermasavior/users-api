@@ -15,4 +15,9 @@ const (
 		FROM users
 		WHERE phone_number = $1
 	`
+	queryIncrementSuccessLoginCount = `
+		UPDATE users
+		SET success_login_count = success_login_count + 1
+		WHERE id = $1
+	`
 )

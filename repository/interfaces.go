@@ -4,13 +4,18 @@
 // interfaces using mockgen. See the Makefile for more information.
 package repository
 
-import "context"
+import (
+	"context"
+)
 
 //go:generate mockgen -package=repository -source=interfaces.go -destination=interfaces.mock.gen.go
 type RepositoryInterface interface {
+	InsertNewUser(ctx context.Context, input User) error
+	GetUserByPhoneNumber(ctx context.Context, phoneNumber string) (user User, err error)
+	IncrementSuccessLoginCount(ctx context.Context, id int) error
+
 	GenerateHashedAndSaltedPassword(password string) (string, error)
 	ComparePasswords(hashedPwd, plainPwd string) (bool, error)
 
-	InsertNewUser(ctx context.Context, input User) error
-	GetUserByPhoneNumber(ctx context.Context, phoneNumber string) (user User, err error)
+	GenerateToken(user User) (string, error)
 }

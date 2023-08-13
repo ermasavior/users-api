@@ -4,15 +4,18 @@ package repository
 import (
 	"database/sql"
 
+	jwtSvc "github.com/SawitProRecruitment/UserService/pkg/jwt"
 	_ "github.com/lib/pq"
 )
 
 type Repository struct {
-	Db *sql.DB
+	Db         *sql.DB
+	JwtService jwtSvc.JWTServiceInterface
 }
 
 type NewRepositoryOptions struct {
-	Dsn string
+	Dsn        string
+	JwtService jwtSvc.JWTServiceInterface
 }
 
 func NewRepository(opts NewRepositoryOptions) *Repository {
@@ -21,6 +24,7 @@ func NewRepository(opts NewRepositoryOptions) *Repository {
 		panic(err)
 	}
 	return &Repository{
-		Db: db,
+		Db:         db,
+		JwtService: opts.JwtService,
 	}
 }

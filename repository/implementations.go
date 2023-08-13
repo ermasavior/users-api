@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log"
 
@@ -17,10 +18,18 @@ func (r *Repository) InsertNewUser(ctx context.Context, input User) error {
 func (r *Repository) GetUserByPhoneNumber(ctx context.Context, phoneNumber string) (user User, err error) {
 	err = r.Db.QueryRowContext(ctx, queryGetUserByPhoneNumber, phoneNumber).
 		Scan(&user.ID, &user.Password)
+	if err == sql.ErrNoRows {
+		return User{}, nil
+	}
 	if err != nil {
 		return
 	}
 	return
+}
+
+func (r *Repository) IncrementSuccessLoginCount(ctx context.Context, id int) error {
+	_, err := r.Db.ExecContext(ctx, queryIncrementSuccessLoginCount, id)
+	return err
 }
 
 func (r *Repository) GenerateHashedAndSaltedPassword(password string) (string, error) {
@@ -43,4 +52,17 @@ func (r *Repository) ComparePasswords(hashedPwd, plainPwd string) (bool, error) 
 	}
 
 	return true, nil
+}
+
+func (r *Repository) GenerateToken(user User) (string, error) {
+	c := authClaims{
+		Phone: user.PhoneNumber,
+	}
+
+	token, err := r.JwtService.GenerateToken(c)
+	if err != nil {
+		return "", err
+	}
+
+	return token, nil
 }

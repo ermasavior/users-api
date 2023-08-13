@@ -5,6 +5,7 @@ import (
 
 	"github.com/SawitProRecruitment/UserService/generated"
 	"github.com/SawitProRecruitment/UserService/handler"
+	jwtSvc "github.com/SawitProRecruitment/UserService/pkg/jwt"
 	"github.com/SawitProRecruitment/UserService/repository"
 
 	"github.com/labstack/echo/v4"
@@ -21,8 +22,11 @@ func main() {
 
 func newServer() *handler.Server {
 	dbDsn := os.Getenv("DATABASE_URL")
+	jwtService := jwtSvc.NewJWTService()
+
 	var repo repository.RepositoryInterface = repository.NewRepository(repository.NewRepositoryOptions{
-		Dsn: dbDsn,
+		Dsn:        dbDsn,
+		JwtService: jwtService,
 	})
 	opts := handler.NewServerOptions{
 		Repository: repo,

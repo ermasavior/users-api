@@ -60,33 +60,58 @@ func (s *Server) LoginUser(ctx echo.Context) error {
 		userReq generated.LoginUserJSONRequestBody
 	)
 
+	c := ctx.Request().Context()
 	reqBody, _ := io.ReadAll(ctx.Request().Body)
 	_ = sonic.Unmarshal(reqBody, &userReq)
 
-	user, err := s.Repository.GetUserByPhoneNumber(ctx.Request().Context(), userReq.PhoneNumber)
+	user, err := s.Repository.GetUserByPhoneNumber(c, userReq.PhoneNumber)
 	if err != nil {
 		resp.Error = &generated.ErrorResponse{
 			Message: err.Error(),
 		}
 		return ctx.JSON(http.StatusInternalServerError, resp)
 	}
-
-	isValid, err := s.Repository.ComparePasswords(user.Password, userReq.Password)
-	if err != nil {
+	if user.ID == 0 {
 		resp.Error = &generated.ErrorResponse{
-			Message: err.Error(),
-		}
-		return ctx.JSON(http.StatusInternalServerError, resp)
-	}
-
-	if !isValid {
-		resp.Error = &generated.ErrorResponse{
-			Message: "Phone number and password does not match",
+			Message: repository.FailedUserLoginMismatchedPhoneNumberPassword,
 		}
 		return ctx.JSON(http.StatusBadRequest, resp)
 	}
 
+	isMatched, err := s.Repository.ComparePasswords(user.Password, userReq.Password)
+	if err != nil {
+		resp.Error = &generated.ErrorResponse{
+			Message: err.Error(),
+		}
+		return ctx.JSON(http.StatusInternalServerError, resp)
+	}
+
+	if !isMatched {
+		resp.Error = &generated.ErrorResponse{
+			Message: repository.FailedUserLoginMismatchedPhoneNumberPassword,
+		}
+		return ctx.JSON(http.StatusBadRequest, resp)
+	}
+
+	token, err := s.Repository.GenerateToken(user)
+	if err != nil {
+		resp.Error = &generated.ErrorResponse{
+			Message: err.Error(),
+		}
+		return ctx.JSON(http.StatusInternalServerError, resp)
+	}
+
+	err = s.Repository.IncrementSuccessLoginCount(c, user.ID)
+	if err != nil {
+		resp.Error = &generated.ErrorResponse{
+			Message: err.Error(),
+		}
+		return ctx.JSON(http.StatusInternalServerError, resp)
+	}
+
+	resp.Success = true
 	resp.UserId = &user.ID
+	resp.AuthToken = &token
 
 	return ctx.JSON(http.StatusOK, resp)
 }

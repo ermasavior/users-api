@@ -1,6 +1,8 @@
 // This file contains types that are used in the repository layer.
 package repository
 
+import "github.com/golang-jwt/jwt"
+
 type User struct {
 	ID          int    `db:"id"`
 	FullName    string `validate:"required,max=60,min=3"`
@@ -19,4 +21,9 @@ type GetTestByIdInput struct {
 
 type GetTestByIdOutput struct {
 	Name string
+}
+
+type authClaims struct {
+	Phone string `json:"phone_number"`
+	jwt.StandardClaims
 }

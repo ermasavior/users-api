@@ -166,6 +166,196 @@ func TestAddUser(t *testing.T) {
 	}
 }
 
+func TestLoginUser(t *testing.T) {
+	method, path := http.MethodPost, "/users/login"
+
+	ctrl := gomock.NewController(t)
+	mockRepo := repository.NewMockRepositoryInterface(ctrl)
+
+	var (
+		userID         = 1
+		hashedPassword = "hashed_password"
+		token          = "token-dummy"
+
+		req = generated.UserLoginRequest{
+			PhoneNumber: "+62818426881",
+			Password:    "Pa$$w0rd",
+		}
+
+		user = repository.User{
+			ID:       userID,
+			Password: hashedPassword,
+		}
+	)
+
+	type args struct {
+		req generated.UserLoginRequest
+	}
+	tests := []struct {
+		name           string
+		args           args
+		mockFunc       func()
+		wantStatusCode int
+		wantRes        generated.UserLoginResponse
+	}{
+		{
+			name: "success",
+			args: args{
+				req: req,
+			},
+			mockFunc: func() {
+				mockRepo.EXPECT().GetUserByPhoneNumber(gomock.Any(), req.PhoneNumber).
+					Return(user, nil).Times(1)
+				mockRepo.EXPECT().ComparePasswords(hashedPassword, req.Password).
+					Return(true, nil).Times(1)
+				mockRepo.EXPECT().GenerateToken(user).Return(token, nil).Times(1)
+				mockRepo.EXPECT().IncrementSuccessLoginCount(gomock.Any(), userID).
+					Return(nil).Times(1)
+			},
+			wantStatusCode: http.StatusOK,
+			wantRes: generated.UserLoginResponse{
+				Success:   true,
+				AuthToken: &token,
+				UserId:    &userID,
+			},
+		},
+		{
+			name: "failed - GetUserByPhoneNumber returns error",
+			args: args{
+				req: req,
+			},
+			mockFunc: func() {
+				mockRepo.EXPECT().GetUserByPhoneNumber(gomock.Any(), req.PhoneNumber).
+					Return(repository.User{}, errors.New("error get user")).Times(1)
+			},
+			wantStatusCode: http.StatusInternalServerError,
+			wantRes: generated.UserLoginResponse{
+				Error: &generated.ErrorResponse{
+					Message: "error get user",
+				},
+			},
+		},
+		{
+			name: "bad request - GetUserByPhoneNumber returns empty user",
+			args: args{
+				req: req,
+			},
+			mockFunc: func() {
+				mockRepo.EXPECT().GetUserByPhoneNumber(gomock.Any(), req.PhoneNumber).
+					Return(repository.User{}, nil).Times(1)
+			},
+			wantStatusCode: http.StatusBadRequest,
+			wantRes: generated.UserLoginResponse{
+				Error: &generated.ErrorResponse{
+					Message: repository.FailedUserLoginMismatchedPhoneNumberPassword,
+				},
+			},
+		},
+		{
+			name: "failed - ComparePasswords returns error",
+			args: args{
+				req: req,
+			},
+			mockFunc: func() {
+				mockRepo.EXPECT().GetUserByPhoneNumber(gomock.Any(), req.PhoneNumber).
+					Return(user, nil).Times(1)
+				mockRepo.EXPECT().ComparePasswords(hashedPassword, req.Password).
+					Return(false, errors.New("error compare pwd")).Times(1)
+			},
+			wantStatusCode: http.StatusInternalServerError,
+			wantRes: generated.UserLoginResponse{
+				Error: &generated.ErrorResponse{
+					Message: "error compare pwd",
+				},
+			},
+		},
+		{
+			name: "bad request - ComparePasswords returns false",
+			args: args{
+				req: req,
+			},
+			mockFunc: func() {
+				mockRepo.EXPECT().GetUserByPhoneNumber(gomock.Any(), req.PhoneNumber).
+					Return(user, nil).Times(1)
+				mockRepo.EXPECT().ComparePasswords(hashedPassword, req.Password).
+					Return(false, nil).Times(1)
+			},
+			wantStatusCode: http.StatusBadRequest,
+			wantRes: generated.UserLoginResponse{
+				Error: &generated.ErrorResponse{
+					Message: repository.FailedUserLoginMismatchedPhoneNumberPassword,
+				},
+			},
+		},
+		{
+			name: "failed - GenerateToken returns error",
+			args: args{
+				req: req,
+			},
+			mockFunc: func() {
+				mockRepo.EXPECT().GetUserByPhoneNumber(gomock.Any(), req.PhoneNumber).
+					Return(user, nil).Times(1)
+				mockRepo.EXPECT().ComparePasswords(hashedPassword, req.Password).
+					Return(true, nil).Times(1)
+				mockRepo.EXPECT().GenerateToken(user).Return("", errors.New("error generate token")).Times(1)
+			},
+			wantStatusCode: http.StatusInternalServerError,
+			wantRes: generated.UserLoginResponse{
+				Error: &generated.ErrorResponse{
+					Message: "error generate token",
+				},
+			},
+		},
+		{
+			name: "failed - IncrementSuccessLoginCount returns error",
+			args: args{
+				req: req,
+			},
+			mockFunc: func() {
+				mockRepo.EXPECT().GetUserByPhoneNumber(gomock.Any(), req.PhoneNumber).
+					Return(user, nil).Times(1)
+				mockRepo.EXPECT().ComparePasswords(hashedPassword, req.Password).
+					Return(true, nil).Times(1)
+				mockRepo.EXPECT().GenerateToken(user).Return(token, nil).Times(1)
+				mockRepo.EXPECT().IncrementSuccessLoginCount(gomock.Any(), userID).
+					Return(errors.New("error increment success login")).Times(1)
+			},
+			wantStatusCode: http.StatusInternalServerError,
+			wantRes: generated.UserLoginResponse{
+				Error: &generated.ErrorResponse{
+					Message: "error increment success login",
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := Server{
+				Repository: mockRepo,
+			}
+			if tt.mockFunc != nil {
+				tt.mockFunc()
+			}
+
+			rec, c := initHTTPCall(method, path)
+			c = buildHTTPRequestBody(c, method, path, tt.args.req)
+			s.LoginUser(c)
+
+			var got generated.UserLoginResponse
+			sonic.Unmarshal(rec.Body.Bytes(), &got)
+
+			if rec.Code != tt.wantStatusCode {
+				t.Errorf("invalid status code, got: %v, want: %v", rec.Code, tt.wantStatusCode)
+			}
+
+			if !reflect.DeepEqual(got, tt.wantRes) {
+				t.Errorf("invalid body response, got: %v, want: %v", got, tt.wantRes)
+			}
+		})
+	}
+}
+
 func TestUpdateUser(t *testing.T) {
 	method, path := http.MethodPatch, "/users"
 
@@ -199,54 +389,6 @@ func TestUpdateUser(t *testing.T) {
 			s.UpdateUser(c)
 
 			var got generated.UpdateUserResponse
-			sonic.Unmarshal(rec.Body.Bytes(), &got)
-
-			if rec.Code != tt.wantStatusCode {
-				t.Errorf("invalid status code, got: %v, want: %v", rec.Code, tt.wantStatusCode)
-			}
-
-			if !reflect.DeepEqual(got, tt.wantRes) {
-				t.Errorf("invalid body response, got: %v, want: %v", got, tt.wantRes)
-			}
-		})
-	}
-}
-
-func TestLoginUser(t *testing.T) {
-	method, path := http.MethodPost, "/users/login"
-
-	var (
-		token  = "token-dummy"
-		userID = 1
-	)
-
-	type args struct {
-	}
-	tests := []struct {
-		name           string
-		args           args
-		wantStatusCode int
-		wantRes        generated.UserLoginResponse
-	}{
-		{
-			name:           "success",
-			args:           args{},
-			wantStatusCode: http.StatusOK,
-			wantRes: generated.UserLoginResponse{
-				AuthToken: &token,
-				UserId:    &userID,
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			s := Server{}
-
-			rec, c := initHTTPCall(method, path)
-			s.LoginUser(c)
-
-			var got generated.UserLoginResponse
 			sonic.Unmarshal(rec.Body.Bytes(), &got)
 
 			if rec.Code != tt.wantStatusCode {

@@ -64,6 +64,21 @@ func (mr *MockRepositoryInterfaceMockRecorder) GenerateHashedAndSaltedPassword(p
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateHashedAndSaltedPassword", reflect.TypeOf((*MockRepositoryInterface)(nil).GenerateHashedAndSaltedPassword), password)
 }
 
+// GenerateToken mocks base method.
+func (m *MockRepositoryInterface) GenerateToken(user User) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GenerateToken", user)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GenerateToken indicates an expected call of GenerateToken.
+func (mr *MockRepositoryInterfaceMockRecorder) GenerateToken(user interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateToken", reflect.TypeOf((*MockRepositoryInterface)(nil).GenerateToken), user)
+}
+
 // GetUserByPhoneNumber mocks base method.
 func (m *MockRepositoryInterface) GetUserByPhoneNumber(ctx context.Context, phoneNumber string) (User, error) {
 	m.ctrl.T.Helper()
@@ -77,6 +92,20 @@ func (m *MockRepositoryInterface) GetUserByPhoneNumber(ctx context.Context, phon
 func (mr *MockRepositoryInterfaceMockRecorder) GetUserByPhoneNumber(ctx, phoneNumber interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByPhoneNumber", reflect.TypeOf((*MockRepositoryInterface)(nil).GetUserByPhoneNumber), ctx, phoneNumber)
+}
+
+// IncrementSuccessLoginCount mocks base method.
+func (m *MockRepositoryInterface) IncrementSuccessLoginCount(ctx context.Context, id int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IncrementSuccessLoginCount", ctx, id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// IncrementSuccessLoginCount indicates an expected call of IncrementSuccessLoginCount.
+func (mr *MockRepositoryInterfaceMockRecorder) IncrementSuccessLoginCount(ctx, id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncrementSuccessLoginCount", reflect.TypeOf((*MockRepositoryInterface)(nil).IncrementSuccessLoginCount), ctx, id)
 }
 
 // InsertNewUser mocks base method.
